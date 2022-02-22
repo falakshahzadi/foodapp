@@ -1,124 +1,69 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
-// import 'package:flutter_inherited_widget_demo/view/count_state.dart';
+import 'package:provider/provider.dart';
 
+void main() => runApp(const MyApp());
 
-
-void main() => runApp(const RootWidget()); 
-
-class RootWidget extends StatefulWidget {
-  const RootWidget({Key? key}) : super(key: key);
-
-  @override
-  _RootWidgetState createState() => _RootWidgetState();
-}
-
-class _RootWidgetState extends State<RootWidget> {
-  int count = 0;
-  void addCounter() {
-    setState(() {
-      count++;
-    });
-  }
-
-  void removeCounter() {
-    setState(() {
-      if (count > 0) {
-        count--;
-      }
-    });
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return CountState(
-      count: count,
-      addCounter: addCounter,
-      removeCounter: removeCounter,
-      child:const InheritedWidgetDemo(),
-    );
-  }
-}
-
-class InheritedWidgetDemo extends StatelessWidget {
-  const InheritedWidgetDemo({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final counterState = CountState.of(context);
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title:const Text(
-            'Counter Inherited Widget Demo',
-            style: TextStyle(color: Colors.white),
+    return ChangeNotifierProvider<Counter>(
+      // <=== PROVIDER
+      create: (context) => Counter(),
+      child: MaterialApp(
+        title: 'Counter App - Compact',
+        home: Scaffold(
+          appBar: AppBar(
+            title: const Text("Page Title"),
           ),
-        ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Text(
-                'Items add & remove: ${counterState.count}',
-                style:const TextStyle(fontSize: 20),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: FloatingActionButton(
-                      onPressed: counterState.removeCounter.call,
-                      child: const Icon(
-                        Icons.remove,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child:  FloatingActionButton(
-                      onPressed: counterState.addCounter.call,
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          body: const Home(),
         ),
       ),
     );
   }
 }
 
-class CountState extends InheritedWidget {
-
-  final int count;
-  final Widget child;
-  final VoidCallback addCounter;
-  final VoidCallback removeCounter;
-
- const CountState({Key? key,required this.count,required this.child,required this.addCounter,required this.removeCounter})
-      : super(key: key, child: child);
-
-  static CountState of(BuildContext context) {
-    return (context.dependOnInheritedWidgetOfExactType<CountState>()!);
-  }
+class Home extends StatelessWidget {
+  const Home({
+    Key? key,
+  }) : super(key: key);
 
   @override
-  bool updateShouldNotify(CountState oldWidget) {
-    //return true;
-    return count != oldWidget.count;
+  Widget build(BuildContext context) {
+    Provider.of<Counter>(context).count++;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Consumer<Counter>(
+            // <=== DEPENDENT
+            builder: (context, counter, child) => Text(
+              '${counter.count}',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+          Builder(builder: (context) {
+            // <=== DEPENDENT
+            final counter = Provider.of<Counter>(context, listen: false);
+            return RaisedButton(
+              onPressed: () => counter.increment(),
+              child: const Text("Increment"),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class Counter with ChangeNotifier {
+  int count = 0;
+
+  void increment() {
+    ++count;
+    notifyListeners();
   }
 }
